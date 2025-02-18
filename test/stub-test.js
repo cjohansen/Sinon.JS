@@ -3781,6 +3781,29 @@ describe("stub", function () {
             assert.equals(myFunc.prop, "rawString");
         });
 
+        it("allows stubbing getters", function () {
+            const y = {
+                get foo() {
+                    return "bar";
+                },
+            };
+            refute.exception(function () {
+                createStub(y, "foo").value("bar");
+            });
+        });
+
+        it("disallows stubbing non-accessor methods", function () {
+            const x = {
+                getFoo: function getFoo() {
+                    return "bar";
+                },
+            };
+
+            assert.exception(function () {
+                createStub(x, "getFoo").value("baz");
+            }, "Error: getFoo is a function, not a getter or value. Use .returns() instead of .value()");
+        });
+
         it("allows stubbing object props with configurable false", function () {
             const myObj = {};
             Object.defineProperty(myObj, "prop", {
