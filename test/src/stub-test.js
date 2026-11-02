@@ -3610,6 +3610,44 @@ describe("stub", function () {
     });
 
     describe(".get", function () {
+        it("preserves paired setters on own and inherited properties", function () {
+            for (const inherited of [false, true]) {
+                const original = {
+                    get prop() {
+                        return this.stored;
+                    },
+                    set prop(value) {
+                        this.stored = value;
+                    },
+                };
+                const object = inherited ? Object.create(original) : original;
+                const descriptor = Object.getOwnPropertyDescriptor(
+                    original,
+                    "prop",
+                );
+                const stub = createStub(object, "prop").get(
+                    () => "replacement",
+                );
+
+                object.prop = "written";
+
+                assert.equals(object.stored, "written");
+                assert.equals(object.prop, "replacement");
+                assert.same(
+                    Object.getOwnPropertyDescriptor(object, "prop").set,
+                    descriptor.set,
+                );
+                assert.isTrue(
+                    Object.getOwnPropertyDescriptor(object, "prop").enumerable,
+                );
+
+                stub.restore();
+
+                assert.equals(object.prop, "written");
+                assert.equals(Object.hasOwn(object, "prop"), !inherited);
+            }
+        });
+
         it("allows users to stub getter functions for properties", function () {
             const myObj = {
                 prop: "foo",
@@ -3710,6 +3748,44 @@ describe("stub", function () {
     });
 
     describe(".set", function () {
+        it("preserves paired getters on own and inherited properties", function () {
+            for (const inherited of [false, true]) {
+                const original = {
+                    get prop() {
+                        return this.stored;
+                    },
+                    set prop(value) {
+                        this.stored = value;
+                    },
+                };
+                const object = inherited ? Object.create(original) : original;
+                const descriptor = Object.getOwnPropertyDescriptor(
+                    original,
+                    "prop",
+                );
+                const stub = createStub(object, "prop").set(function (value) {
+                    this.stored = `replacement: ${value}`;
+                });
+
+                object.prop = "written";
+
+                assert.equals(object.prop, "replacement: written");
+                assert.same(
+                    Object.getOwnPropertyDescriptor(object, "prop").get,
+                    descriptor.get,
+                );
+                assert.isTrue(
+                    Object.getOwnPropertyDescriptor(object, "prop").enumerable,
+                );
+
+                stub.restore();
+
+                object.prop = "restored";
+                assert.equals(object.prop, "restored");
+                assert.equals(Object.hasOwn(object, "prop"), !inherited);
+            }
+        });
+
         it("allows users to stub setter functions for properties", function () {
             const myObj = {
                 prop: "foo",
