@@ -1204,6 +1204,34 @@ describe("Sandbox", function () {
             this.sandbox = createSandbox();
         });
 
+        it("preserves paired setters on own and inherited properties", function () {
+            for (const inherited of [false, true]) {
+                const original = {
+                    get foo() {
+                        return this.prop;
+                    },
+                    set foo(value) {
+                        this.prop = value;
+                    },
+                };
+                const object = inherited ? Object.create(original) : original;
+                object.prop = "original";
+
+                this.sandbox.replaceGetter(object, "foo", () => "replacement");
+                object.foo = "updated";
+
+                assert.equals(object.prop, "updated");
+                assert.equals(object.foo, "replacement");
+
+                this.sandbox.restore();
+
+                assert.equals(object.foo, "updated");
+                if (inherited) {
+                    refute(Object.getOwnPropertyDescriptor(object, "foo"));
+                }
+            }
+        });
+
         it("should replace getters", function () {
             const expected = "baz";
             const object = {
@@ -1376,6 +1404,36 @@ describe("Sandbox", function () {
     describe(".replaceSetter", function () {
         beforeEach(function () {
             this.sandbox = createSandbox();
+        });
+
+        it("preserves paired getters on own and inherited properties", function () {
+            for (const inherited of [false, true]) {
+                const original = {
+                    get foo() {
+                        return this.prop;
+                    },
+                    set foo(value) {
+                        this.prop = value;
+                    },
+                };
+                const object = inherited ? Object.create(original) : original;
+                object.prop = "original";
+
+                this.sandbox.replaceSetter(object, "foo", function (value) {
+                    this.prop = `replacement ${value}`;
+                });
+                object.foo = "value";
+
+                assert.equals(object.foo, "replacement value");
+
+                this.sandbox.restore();
+                object.foo = "restored";
+
+                assert.equals(object.foo, "restored");
+                if (inherited) {
+                    refute(Object.getOwnPropertyDescriptor(object, "foo"));
+                }
+            }
         });
 
         it("should replace setter", function () {

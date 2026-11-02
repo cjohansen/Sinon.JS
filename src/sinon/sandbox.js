@@ -481,8 +481,8 @@ export default function Sandbox(opts = {}) {
         // store a function for restoring the replaced property
         push(fakeRestorers, getFakeRestorer(object, property));
 
-        // eslint-disable-next-line accessor-pairs
         Object.defineProperty(object, property, {
+            get: descriptor.get,
             set: replacement,
             configurable: true,
             enumerable: descriptor.enumerable,
@@ -531,6 +531,7 @@ export default function Sandbox(opts = {}) {
 
         Object.defineProperty(object, property, {
             get: replacement,
+            set: descriptor.set,
             configurable: true,
             enumerable: descriptor.enumerable,
         });
