@@ -51,6 +51,25 @@ function getAccessor(object, property, method, originalDescriptor) {
     return null;
 }
 
+function restoreInheritedAccessor(
+    object,
+    property,
+    accessor,
+    originalDescriptor,
+) {
+    const descriptor = getPropertyDescriptor(object, property);
+    descriptor[accessor] = originalDescriptor[accessor];
+
+    if (
+        descriptor.get === originalDescriptor.get &&
+        descriptor.set === originalDescriptor.set
+    ) {
+        delete object[property];
+    } else {
+        Object.defineProperty(object, property, descriptor);
+    }
+}
+
 // Cheap way to detect if we have ES5 support.
 const hasES5Support = "keys" in Object;
 
@@ -192,7 +211,12 @@ export default function wrapMethod(object, property, method) {
             if (!owned) {
                 try {
                     // In some cases `delete` may throw an error
-                    delete object[property][accessor];
+                    restoreInheritedAccessor(
+                        object,
+                        property,
+                        accessor,
+                        wrappedMethodDesc,
+                    );
                 } catch (e) {} // eslint-disable-line no-empty
                 // For native code functions `delete` fails without throwing an error
                 // on Chrome < 43, PhantomJS, etc.
