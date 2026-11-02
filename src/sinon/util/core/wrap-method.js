@@ -32,7 +32,11 @@ function mirrorProperties(target, source) {
     }
 }
 
-function getAccessor(object, property, method) {
+function getAccessor(object, property, method, originalDescriptor) {
+    if (originalDescriptor && hasOwnProperty(originalDescriptor, "value")) {
+        return null;
+    }
+
     const accessors = ["get", "set"];
     const descriptor = getPropertyDescriptor(object, property);
 
@@ -174,7 +178,12 @@ export default function wrapMethod(object, property, method) {
     }
 
     function restore() {
-        accessor = getAccessor(object, property, this.wrappedMethod);
+        accessor = getAccessor(
+            object,
+            property,
+            this.wrappedMethod,
+            wrappedMethodDesc,
+        );
         let descriptor;
         // For prototype properties try to reset by delete first.
         // If this fails (ex: localStorage on mobile safari) then force a reset

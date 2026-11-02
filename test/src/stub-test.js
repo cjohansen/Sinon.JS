@@ -3648,6 +3648,21 @@ describe("stub", function () {
             }
         });
 
+        it("restores a method when its replacement getter has the same name", function () {
+            const original = function method() {
+                return "original";
+            };
+            const object = { prop: original };
+            const stub = createStub(object, "prop").get(function method() {
+                return "replacement";
+            });
+
+            assert.equals(object.prop, "replacement");
+            stub.restore();
+
+            assert.same(object.prop, original);
+        });
+
         it("allows users to stub getter functions for properties", function () {
             const myObj = {
                 prop: "foo",
@@ -3784,6 +3799,22 @@ describe("stub", function () {
                 assert.equals(object.prop, "restored");
                 assert.equals(Object.hasOwn(object, "prop"), !inherited);
             }
+        });
+
+        it("restores a method when its replacement setter has the same name", function () {
+            const original = function method() {
+                return "original";
+            };
+            const object = { prop: original };
+            const stub = createStub(object, "prop").set(function method(value) {
+                this.stored = value;
+            });
+
+            object.prop = "replacement";
+            assert.equals(object.stored, "replacement");
+            stub.restore();
+
+            assert.same(object.prop, original);
         });
 
         it("allows users to stub setter functions for properties", function () {
