@@ -120,9 +120,13 @@ asdf install
 
 ### Run the tests
 
-Following command runs unit tests in PhantomJS, Node and WebWorker
+The following command runs unit tests in Node, a headless browser, and a WebWorker.
+The browser suites use Puppeteer.
 
     $ npm test
+
+To run a suite individually, use `npm run test-node`, `npm run test-headless`, or
+`npm run test-webworker`.
 
 ##### Testing in development
 
@@ -139,7 +143,7 @@ Dev mode features:
 - [watching related files](https://mochajs.org/#w---watch) to restart tests once changes are made
 - using [Min reporter](https://mochajs.org/#min), which cleans the console each time tests run, so test results are always on top
 
-Note that in dev mode tests run only in Node. Before creating your PR please ensure tests are passing in Phantom and WebWorker as well. To check this please use [Run the tests](#run-the-tests) instructions.
+Note that in dev mode tests run only in Node. Before creating your PR, please ensure tests are passing in the headless browser and WebWorker as well. To check this, please use the [Run the tests](#run-the-tests) instructions.
 
 ### Contract Tests
 
