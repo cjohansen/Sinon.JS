@@ -359,6 +359,82 @@ describe("spy", function () {
         assert.equals(descriptor1, descriptor3);
     });
 
+    it("restores an inherited getter without invoking it", function () {
+        let reads = 0;
+        const prototype = {
+            get property() {
+                reads++;
+                return 42;
+            },
+        };
+        const object = Object.create(prototype);
+        const spy = createSpy(object, "property", ["get"]);
+
+        spy.get.restore();
+
+        assert.equals(reads, 0);
+        refute(Object.hasOwn(object, "property"));
+        assert.equals(object.property, 42);
+        refute(spy.get.called);
+    });
+
+    it("restores an inherited setter without invoking the paired getter", function () {
+        let reads = 0;
+        const prototype = {
+            get property() {
+                reads++;
+                return this.stored;
+            },
+            set property(value) {
+                this.stored = value;
+            },
+        };
+        const object = Object.create(prototype);
+        const spy = createSpy(object, "property", ["set"]);
+
+        spy.set.restore();
+
+        assert.equals(reads, 0);
+        refute(Object.hasOwn(object, "property"));
+        object.property = 42;
+        assert.equals(object.stored, 42);
+        refute(spy.set.called);
+    });
+
+    it("keeps the other inherited accessor spied until both are restored", function () {
+        for (const first of ["get", "set"]) {
+            const second = first === "get" ? "set" : "get";
+            const prototype = {
+                get property() {
+                    return this.stored;
+                },
+                set property(value) {
+                    this.stored = value;
+                },
+            };
+            const original = Object.getOwnPropertyDescriptor(
+                prototype,
+                "property",
+            );
+            const object = Object.create(prototype);
+            const spy = createSpy(object, "property", ["get", "set"]);
+
+            spy[first].restore();
+
+            const partial = Object.getOwnPropertyDescriptor(object, "property");
+            assert.same(partial[first], original[first]);
+            assert.same(partial[second], spy[second]);
+
+            spy[second].restore();
+
+            refute(Object.hasOwn(object, "property"));
+            assert.equals(
+                Object.getOwnPropertyDescriptor(prototype, "property"),
+                original,
+            );
+        }
+    });
+
     describe("global.Error", function () {
         beforeEach(function () {
             this.originalError = globalContext.Error;

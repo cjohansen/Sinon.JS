@@ -2,6 +2,7 @@ import commons from "@sinonjs/commons";
 
 const { prototypes } = commons;
 import isPropertyConfigurable from "./util/core/is-property-configurable.js";
+import getPropertyDescriptor from "./util/core/get-property-descriptor.js";
 import exportAsyncBehaviors from "./util/core/export-async-behaviors.js";
 import extend from "./util/core/extend.js";
 import spy from "./spy.js";
@@ -281,6 +282,10 @@ const defaultBehaviors = {
 
     get: function get(fake, getterFunction) {
         const rootStub = fake.stub || fake;
+        const descriptor = getPropertyDescriptor(
+            rootStub.rootObj,
+            rootStub.propName,
+        ) || { configurable: true };
 
         // Wrap the replacement getter in a spy so that reading the property
         // records the access (callCount, calledOnce, ...). The spy is exposed
@@ -291,10 +296,9 @@ const defaultBehaviors = {
 
         Object.defineProperty(rootStub.rootObj, rootStub.propName, {
             get: getterSpy,
-            configurable: isPropertyConfigurable(
-                rootStub.rootObj,
-                rootStub.propName,
-            ),
+            set: descriptor.set,
+            enumerable: descriptor.enumerable,
+            configurable: descriptor.configurable,
         });
 
         return fake;
@@ -302,6 +306,10 @@ const defaultBehaviors = {
 
     set: function set(fake, setterFunction) {
         const rootStub = fake.stub || fake;
+        const descriptor = getPropertyDescriptor(
+            rootStub.rootObj,
+            rootStub.propName,
+        ) || { configurable: true };
 
         // Wrap the replacement setter in a spy so that writing the property
         // records the access (callCount, calledWith, ...). The spy is exposed
@@ -310,18 +318,12 @@ const defaultBehaviors = {
         const setterSpy = spy(setterFunction);
         rootStub.setter = setterSpy;
 
-        Object.defineProperty(
-            rootStub.rootObj,
-            rootStub.propName,
-            // eslint-disable-next-line accessor-pairs
-            {
-                set: setterSpy,
-                configurable: isPropertyConfigurable(
-                    rootStub.rootObj,
-                    rootStub.propName,
-                ),
-            },
-        );
+        Object.defineProperty(rootStub.rootObj, rootStub.propName, {
+            get: descriptor.get,
+            set: setterSpy,
+            enumerable: descriptor.enumerable,
+            configurable: descriptor.configurable,
+        });
 
         return fake;
     },
